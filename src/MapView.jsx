@@ -5,6 +5,15 @@ import markerIcon2x from "leaflet/dist/images/marker-icon-2x.png";
 import markerIcon from "leaflet/dist/images/marker-icon.png";
 import markerShadow from "leaflet/dist/images/marker-shadow.png";
 
+const defaultIcon = L.icon({
+  iconRetinaUrl: markerIcon2x,
+  iconUrl: markerIcon,
+  shadowUrl: markerShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
 
 function JumpToUser({ userLocation, jumpToUserSignal }) {
   const map = useMap();
@@ -72,13 +81,13 @@ export default function MapView({ places, userLocation, jumpToUserSignal, userMa
 
 
         {userLocation && (
-          <Marker position={[userLocation.lat, userLocation.lng]}>
+          <Marker position={[userLocation.lat, userLocation.lng]}icon={defaultIcon}>
             <Popup>你的位置</Popup>
           </Marker>
         )}
 
         {filteredPlaces.map((p) => (
-          <Marker key={p.id} position={[p.lat, p.lng]}>
+          <Marker key={p.id} position={[p.lat, p.lng]}icon={defaultIcon}>
             <Popup>
               <div style={{ fontWeight: 700 }}>{p.name}</div>
               <div style={{ fontSize: 12, opacity: 0.8 }}>
