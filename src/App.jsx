@@ -47,6 +47,8 @@ function AddPlaceForm({ categories, onSaved, onAddCategory }) {
   const [type, setType] = useState("restaurant");
   const [category, setCategory] = useState("");
   const [newCat, setNewCat] = useState("");
+  const [shareLink, setShareLink] = useState("");
+
 
 
   async function handleSave() {
@@ -56,27 +58,47 @@ function AddPlaceForm({ categories, onSaved, onAddCategory }) {
   }
 
   let lat = null;
-  let lng = null;
+let lng = null;
 
-  if (address.trim()) {
-    try {
-      const geo = await geocodeAddress(address.trim());
-      if (geo) {
-        lat = geo.lat;
-        lng = geo.lng;
-      } else {
-        alert("找不到此地址，將以無座標方式儲存");
-      }
-    } catch (e) {
-      console.error(e);
-      alert("地址轉換失敗，將以無座標方式儲存");
+// ① 先用分享連結解析（最穩）
+if (shareLink.trim()) {
+  try {
+    const r = await fetch(`/api/resolve?url=${encodeURIComponent(shareLink.trim())}`);
+    const data = await r.json();
+
+    if (data?.ok && typeof data.lat === "number" && typeof data.lng === "number") {
+      lat = data.lat;
+      lng = data.lng;
+    } else {
+      console.warn("resolve failed", data);
     }
+  } catch (e) {
+    console.error("resolve error", e);
   }
+}
+
+// ② 沒拿到座標才 fallback 地址 geocode（你原本的）
+if ((lat == null || lng == null) && address.trim()) {
+  try {
+    const geo = await geocodeAddress(address.trim());
+    if (geo) {
+      lat = geo.lat;
+      lng = geo.lng;
+    } else {
+      alert("找不到此地址，將以無座標方式儲存");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("地址轉換失敗，將以無座標方式儲存");
+  }
+}
+
 
   const place = {
     id: crypto.randomUUID(),
     name: name.trim(),
     address: address.trim(),
+    shareLink: shareLink.trim(),
     type,
     category: category.trim(),
     lat,
@@ -90,6 +112,8 @@ function AddPlaceForm({ categories, onSaved, onAddCategory }) {
   setName("");
   setAddress("");
   setCategory("");
+  setShareLink("");
+
   alert("已儲存");
 }
 
@@ -106,6 +130,11 @@ function AddPlaceForm({ categories, onSaved, onAddCategory }) {
         placeholder="地址（先當文字）"
         value={address}
         onChange={(e) => setAddress(e.target.value)}
+      />
+      <input
+        placeholder="分享連結（Naver / Kakao，優先使用）"
+        value={shareLink}
+        onChange={(e) => setShareLink(e.target.value)}
       />
 
       <select value={type} onChange={(e) => setType(e.target.value)}>
