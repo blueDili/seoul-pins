@@ -1,29 +1,21 @@
-import { get, set } from "idb-keyval";
+import { supabase } from "./supabase";
 
-const KEY = "categories";
-
-/** 取得所有類別（字串陣列） */
 export async function getCategories() {
-  const data = await get(KEY);
-  return Array.isArray(data) ? data : [];
+  const { data, error } = await supabase
+    .from("categories")
+    .select("name")
+    .order("name", { ascending: true });
+
+  if (error) throw error;
+  return (data || []).map((r) => r.name);
 }
 
-/** 新增類別（去空白 + 不分大小寫去重） */
 export async function addCategory(name) {
-  const n = (name || "").trim();
-  if (!n) return;
-
-  const current = await getCategories();
-  const exists = current.some((x) => x.toLowerCase() === n.toLowerCase());
-  if (exists) return;
-
-  const next = [...current, n];
-  await set(KEY, next);
+  const { error } = await supabase.from("categories").upsert({ name });
+  if (error) throw error;
 }
 
-/** 刪除類別（用名稱） */
 export async function deleteCategory(name) {
-  const current = await getCategories();
-  const next = current.filter((x) => x !== name);
-  await set(KEY, next);
+  const { error } = await supabase.from("categories").delete().eq("name", name);
+  if (error) throw error;
 }

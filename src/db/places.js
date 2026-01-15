@@ -1,41 +1,56 @@
-import { get, set } from "idb-keyval";
+import { supabase } from "./supabase";
 
-
-
-const KEY = "places";
-
-/** 取得所有地點 */
 export async function getPlaces() {
-  const data = await get(KEY);
-  return Array.isArray(data) ? data : [];
+  const { data, error } = await supabase
+    .from("places")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  // 對齊你原本欄位命名
+  return (data || []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    address: r.address || "",
+    shareLink: r.share_link || "",
+    type: r.type,
+    category: r.category || "",
+    lat: r.lat,
+    lng: r.lng,
+    createdAt: r.created_at,
+  }));
 }
 
-/** 新增一個地點 */
 export async function addPlace(place) {
-  const current = await getPlaces();
-  const next = [...current, place];
-  await set(KEY, next);
+  const row = {
+    id: place.id,
+    name: place.name,
+    address: place.address || null,
+    share_link: place.shareLink || null,
+    type: place.type,
+    category: place.category || null,
+    lat: typeof place.lat === "number" ? place.lat : null,
+    lng: typeof place.lng === "number" ? place.lng : null,
+    created_at: place.createdAt ?? Date.now(),
+  };
+
+  const { error } = await supabase.from("places").upsert(row);
+  if (error) throw error;
 }
 
-/** 刪除一個地點（用 id） */
 export async function deletePlaceById(id) {
-  const current = await getPlaces();
-  const next = current.filter((p) => p.id !== id);
-  await set(KEY, next);
+  const { error } = await supabase.from("places").delete().eq("id", id);
+  if (error) throw error;
 }
 
-/** 清空全部（之後除錯會用到） */
-export async function clearPlaces() {
-  await set(KEY, []);
-}
-
+// 你原本有 removeCategoryFromPlaces：同樣改成更新
 export async function removeCategoryFromPlaces(categoryName) {
-  const current = await getPlaces();
-  const next = current.map((p) => {
-    if (p.type === "restaurant" && p.category === categoryName) {
-      return { ...p, category: "" };
-    }
-    return p;
-  });
-  await set(KEY, next);
+  const { error } = await supabase
+    .from("places")
+    .update({ category: null })
+    .eq("type", "restaurant")
+    .eq("category", categoryName);
+
+  if (error) throw error;
 }

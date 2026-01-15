@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.90.1",
     "idb-keyval": "^6.2.2",
     "leaflet": "^1.9.4",
     "react": "^19.2.0",
