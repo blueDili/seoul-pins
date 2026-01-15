@@ -67,18 +67,49 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ✅ 先處理 naver.me 短網址：追 redirect 拿 finalUrl
 if (u.hostname === "naver.me") {
-  const { finalUrl, steps, status } = await followRedirects(u.toString(), 6);
+  // 先追 naver.me
+  let r = await followRedirects(u.toString(), 10);
+
+  // 如果停在 appLink，再追一次
+  if (r.finalUrl.includes("appLink.naver")) {
+    const r2 = await followRedirects(r.finalUrl, 10);
+    // 把 step 合併（方便你看總共跳幾次）
+    r = { ...r2, steps: r.steps + r2.steps };
+  }
+
+  // 嘗試從 expandedUrl 解析 ?c=lng,lat（如果有）
+  let lat: number | null = null;
+  let lng: number | null = null;
+
+  try {
+    const uf = new URL(r.finalUrl);
+    const c = uf.searchParams.get("c");
+    if (c) {
+      const parts = c.split(",").map((s) => s.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        const lngNum = Number(parts[0]);
+        const latNum = Number(parts[1]);
+        if (Number.isFinite(latNum) && Number.isFinite(lngNum)) {
+          lat = latNum;
+          lng = lngNum;
+        }
+      }
+    }
+  } catch {}
 
   return res.status(200).json({
     ok: true,
     provider: "naver",
     inputUrl: raw,
     host: u.hostname,
-    finalUrl,
-    steps,
-    status
+    finalUrl: r.finalUrl,       // ✅ 你最關心的：最後展開後的 URL
+    steps: r.steps,
+    status: r.status,
+    lat,
+    lng
   });
 }
+
 
 // 其他先維持原樣
 return res.status(200).json({
