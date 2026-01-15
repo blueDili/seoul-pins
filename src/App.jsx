@@ -344,6 +344,21 @@ export default function App() {
 
       {/* 中間內容區 */}
       <main style={{ flex: 1, overflow: "auto", paddingBottom: 80 }}>
+        {!isOnline && (
+          <div
+            style={{
+              padding: 12,
+              margin: 16,
+              borderRadius: 12,
+              border: "1px solid #444",
+              background: "rgba(255,255,255,0.05)",
+              color: "#ddd",
+              fontSize: 14,
+            }}
+          >
+            目前離線：清單仍可使用，地圖底圖可能無法載入。
+          </div>
+        )}
         {tab === "add" && (
           <Screen title="新增">
             <AddPlaceForm
