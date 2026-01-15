@@ -78,45 +78,37 @@ if (u.hostname === "naver.me") {
   }
 
   // 嘗試從 expandedUrl 解析 ?c=lng,lat（如果有）
-  let lat: number | null = null;
-  let lng: number | null = null;
+    // ===== 在這裡開始加 =====
+
+  // 1️⃣ 從 appLink 抽 pinId
+  let placeId: string | null = null;
 
   try {
     const uf = new URL(r.finalUrl);
-    const c = uf.searchParams.get("c");
-    if (c) {
-      const parts = c.split(",").map((s) => s.trim()).filter(Boolean);
-      if (parts.length >= 2) {
-        const lngNum = Number(parts[0]);
-        const latNum = Number(parts[1]);
-        if (Number.isFinite(latNum) && Number.isFinite(lngNum)) {
-          lat = latNum;
-          lng = lngNum;
-        }
-      }
-    }
+    placeId = uf.searchParams.get("pinId");
   } catch {}
 
-  return res.status(200).json({
+  // 2️⃣ 組成真正的 place 頁
+  let placeUrl: string | null = null;
+  if (placeId) {
+    placeUrl = `https://m.place.naver.com/place/${placeId}`;
+  }
+
+  // ===== 加到這裡結束 =====
+
+
+    return res.status(200).json({
     ok: true,
     provider: "naver",
     inputUrl: raw,
-    host: u.hostname,
-    finalUrl: r.finalUrl,       // ✅ 你最關心的：最後展開後的 URL
+    finalUrl: r.finalUrl,
+    placeId,
+    placeUrl,
     steps: r.steps,
-    status: r.status,
-    lat,
-    lng
+    status: r.status
   });
+
+}
 }
 
 
-// 其他先維持原樣
-return res.status(200).json({
-  ok: true,
-  message: "resolve api alive",
-  inputUrl: raw,
-  host: u.hostname
-});
-
-}
