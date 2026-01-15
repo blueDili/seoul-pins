@@ -95,6 +95,43 @@ if (u.hostname === "naver.me") {
   }
 
   // ===== 加到這裡結束 =====
+let lat: number | null = null;
+let lng: number | null = null;
+
+if (placeUrl) {
+  const rPlace = await fetch(placeUrl, {
+    method: "GET",
+    headers: {
+      "User-Agent": UA,
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8,zh-TW;q=0.7"
+    }
+  });
+
+  const html = await rPlace.text();
+
+  // 嘗試抓座標（Naver 常用 x/y 表示 lng/lat）
+  // 我們先用「幾種常見 pattern」去 match
+  const patterns: RegExp[] = [
+    /["']x["']\s*:\s*["']?([0-9]+\.[0-9]+)["']?.{0,80}["']y["']\s*:\s*["']?([0-9]+\.[0-9]+)["']?/s,
+    /"x"\s*:\s*([0-9]+\.[0-9]+)\s*,\s*"y"\s*:\s*([0-9]+\.[0-9]+)/s,
+    /lng["']?\s*:\s*([0-9]+\.[0-9]+).{0,80}lat["']?\s*:\s*([0-9]+\.[0-9]+)/s
+  ];
+
+  for (const re of patterns) {
+    const m = html.match(re);
+    if (!m) continue;
+
+    const x = Number(m[1]); // lng
+    const y = Number(m[2]); // lat
+
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      lng = x;
+      lat = y;
+      break;
+    }
+  }
+}
 
 
     return res.status(200).json({
@@ -105,7 +142,9 @@ if (u.hostname === "naver.me") {
     placeId,
     placeUrl,
     steps: r.steps,
-    status: r.status
+    status: r.status,
+    lat,
+    lng
   });
 
 }
