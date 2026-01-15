@@ -359,6 +359,24 @@ export default function App() {
     };
   }, []);
 
+  // ✅ App 啟動：先拉一次雲端資料
+useEffect(() => {
+  (async () => {
+    await refreshCategories();
+    await refreshPlaces();
+  })();
+}, []);
+
+// ✅ MVP：每 5 秒拉一次，做到跨裝置自動同步
+useEffect(() => {
+  const t = setInterval(() => {
+    refreshPlaces();
+    refreshCategories();
+  }, 5000);
+
+  return () => clearInterval(t);
+}, []);
+
 
 
   return (
